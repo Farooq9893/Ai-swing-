@@ -2,7 +2,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 
- st.set_page_config(page_title="Stock Dashboard", layout="wide")
+st.set_page_config(page_title="Stock Dashboard", layout="wide")
  
  st.sidebar.title("📊 Dashboard Menu")
  menu = st.sidebar.radio("Select Option", ["Dashboard", "Fundamental", "Balance Sheet", "Sector Rotation", "Study Material", "AI Chatbot"])
