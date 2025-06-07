@@ -70,7 +70,8 @@ elif menu == "Sector Rotation":
 # 🤖 AI Chatbot
 elif menu == "AI Chatbot":
     st.subheader("🤖 Ask the AI Chatbot")
-    st.write("Coming soon: Chatbot for stock Q&A based on your data")import streamlit as st
+    st.write("Coming soon: Chatbot for stock Q&A based on your data")
+    import streamlit as st
 import yfinance as yf
 import pandas as pd
 import numpy as np
