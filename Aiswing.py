@@ -9,7 +9,8 @@ import os
 
 st.set_page_config(page_title="Stock Dashboard", layout="wide")
 
-# 📌 Number Formatter Function
+# 📌 Number Formatter
+
 def format_number(val):
     if val is None:
         return "N/A"
@@ -25,8 +26,10 @@ def format_number(val):
     else:
         return str(val)
 
+# Sidebar
 st.sidebar.title("📊 Dashboard Menu")
-menu = st.sidebar.radio("Select Option", ["Dashboard", "Fundamental", "Balance Sheet", "Sector Rotation", "VCP Screener", "AI Chatbot"])
+menu = st.sidebar.radio("Select Option", [
+    "Dashboard", "Fundamental", "Balance Sheet", "Sector Rotation", "VCP Screener", "AI Chatbot"])
 
 st.title("📈 Stock Analysis Dashboard")
 
@@ -64,7 +67,7 @@ elif menu == "Balance Sheet":
     bs = yf.Ticker(ticker).balance_sheet.fillna(0).T
     bs.index = bs.index.strftime("%Y")
     bs = bs.applymap(format_number)
-    st.markdown("### Balance Sheet (₹ Cr Approx.)")
+    st.markdown("### Balance Sheet (\u20B9 Cr Approx.)")
     st.dataframe(bs.T)
 
 # 🔄 Sector Rotation
@@ -77,15 +80,21 @@ elif menu == "Sector Rotation":
         "FMCG": ["HINDUNILVR.NS", "ITC.NS", "DABUR.NS"]
     }
 
-    performance = {}
-    end = datetime.date.today()
-    start = end - datetime.timedelta(days=30)
+    time_option = st.selectbox("\ud83d\udcc5 Select Timeframe", ["1 Day", "7 Days", "30 Days"])
+    chart_type = st.selectbox("\ud83d\udcca Select Chart Type", ["Bar Chart", "Treemap", "Line Chart (Beta)"])
 
+    days_map = {"1 Day": 1, "7 Days": 7, "30 Days": 30}
+    days = days_map[time_option]
+
+    end = datetime.date.today()
+    start = end - datetime.timedelta(days=days)
+
+    performance = {}
     for sector, stocks in sectors.items():
         returns = []
         for s in stocks:
             try:
-                df = yf.download(s, start=start, end=end)
+                df = yf.download(s, start=start, end=end, progress=False)
                 if not df.empty:
                     pct = (df['Close'][-1] - df['Close'][0]) / df['Close'][0] * 100
                     returns.append(pct)
@@ -94,20 +103,33 @@ elif menu == "Sector Rotation":
         if returns:
             performance[sector] = np.mean(returns)
 
-    perf_df = pd.DataFrame(list(performance.items()), columns=["Sector", "30D Return (%)"])
-    fig = px.imshow([perf_df["30D Return (%)"].tolist()], 
-                    labels=dict(x=perf_df["Sector"].tolist(), y=["Return"], color="% Return"),
-                    text_auto=True, color_continuous_scale='RdYlGn')
-    st.plotly_chart(fig)
+    perf_df = pd.DataFrame(list(performance.items()), columns=["Sector", f"{days}D Return (%)"])
+    perf_df.sort_values(by=f"{days}D Return (%)", ascending=False, inplace=True)
+
+    if chart_type == "Bar Chart":
+        fig = px.bar(perf_df, x=f"{days}D Return (%)", y="Sector", orientation='h',
+                     color=f"{days}D Return (%)", color_continuous_scale='RdYlGn',
+                     title=f"{days}-Day Sector Returns")
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif chart_type == "Treemap":
+        fig = px.treemap(perf_df, path=["Sector"], values=f"{days}D Return (%)",
+                         color=f"{days}D Return (%)", color_continuous_scale='RdYlGn',
+                         title=f"{days}-Day Sector Treemap")
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif chart_type == "Line Chart (Beta)":
+        st.info("Line chart needs date-wise returns. This is a placeholder.")
+        st.dataframe(perf_df)
 
 # 🧠 VCP Screener
 elif menu == "VCP Screener":
-    st.subheader("📌 Volatility Contraction Pattern (VCP) Screener")
+    st.subheader("\ud83d\udccc Volatility Contraction Pattern (VCP) Screener")
     st.write("Coming soon: VCP breakout filtering with volume and consolidation patterns")
 
-# 🤖 AI Chatbot
+# 🧠 AI Chatbot
 elif menu == "AI Chatbot":
-    st.subheader("🤖 Ask the AI Chatbot")
+    st.subheader("\ud83e\udde0 Ask the AI Chatbot")
     openai.api_key = st.secrets["openai_api_key"] if "openai_api_key" in st.secrets else os.getenv("OPENAI_API_KEY")
     user_input = st.text_input("Ask your stock question:")
     if user_input:
