@@ -8,12 +8,12 @@ st.set_page_config(page_title="Stock Dashboard", layout="wide")
 def format_number(val):
     if val is None:
         return "N/A"
-    elif isinstance(val, float) and 0 < val < 1:
+    elif isinstance(val, float) and 0 < abs(val) < 1:
         return f"{val * 100:.2f}%"
     elif isinstance(val, (int, float)):
-        if val >= 1e7:
+        if abs(val) >= 1e7:
             return f"{val / 1e7:.2f} Cr"
-        elif val >= 1e5:
+        elif abs(val) >= 1e5:
             return f"{val / 1e5:.2f} Lac"
         else:
             return f"{val:.2f}"
@@ -21,7 +21,7 @@ def format_number(val):
         return str(val)
 
 st.sidebar.title("📊 Dashboard Menu")
-menu = st.sidebar.radio("Select Option", ["Dashboard", "Fundamental", "Balance Sheet", "Sector Rotation", "Study Material", "AI Chatbot"])
+menu = st.sidebar.radio("Select Option", ["Dashboard", "Fundamental", "Balance Sheet", "Sector Rotation", "AI Chatbot"])
 
 st.title("📈 Stock Analysis Dashboard")
 
@@ -34,44 +34,38 @@ if menu == "Dashboard":
 
 # 🔍 Fundamental Analysis
 elif menu == "Fundamental":
-    st.subheader("🔍 Fundamental Analysis")
-    ticker = st.text_input("Enter Stock Ticker for FA", "TCS.NS")
-    info = yf.Ticker(ticker).info
+    st.subheader("🔍 Multi-Year Financial Data")
+    ticker = st.text_input("Enter Stock Ticker", "TCS.NS")
+    stock = yf.Ticker(ticker)
+    fin = stock.financials.fillna(0).T
+    fin.index = fin.index.strftime("%Y")
+    fin = fin.applymap(format_number)
+    st.markdown("### 📌 Annual Financial Metrics")
+    st.dataframe(fin.T)
 
-    fundamentals = {
-        "Name": info.get("shortName", "N/A"),
-        "Sector": info.get("sector", "N/A"),
-        "Market Cap": info.get("marketCap", "N/A"),
-        "PE Ratio": info.get("trailingPE", "N/A"),
-        "EPS": info.get("trailingEps", "N/A"),
-        "Book Value": info.get("bookValue", "N/A"),
-        "52 Week High": info.get("fiftyTwoWeekHigh", "N/A"),
-        "52 Week Low": info.get("fiftyTwoWeekLow", "N/A"),
-        "Return on Equity": info.get("returnOnEquity", "N/A"),
-        "Dividend Yield": info.get("dividendYield", "N/A")
-    }
-
-    formatted_fundamentals = {k: format_number(v) for k, v in fundamentals.items()}
-    st.markdown("### 📊 Key Fundamentals")
-    st.table(pd.DataFrame.from_dict(formatted_fundamentals, orient="index", columns=["Value"]))
+    st.markdown("### 📈 EPS (Quarter over Quarter)")
+    q_earn = stock.quarterly_earnings
+    if not q_earn.empty:
+        q_earn.index = q_earn.index.strftime("%b %Y")
+        q_earn['EPS'] = q_earn['Earnings Per Share'].apply(format_number)
+        st.table(q_earn[['EPS']].T)
+    else:
+        st.warning("EPS quarterly data not available.")
 
 # 📘 Balance Sheet
 elif menu == "Balance Sheet":
     st.subheader("📘 Balance Sheet Viewer")
     ticker = st.text_input("Enter Stock Ticker for BS", "TCS.NS")
-    bs = yf.Ticker(ticker).balance_sheet
-    st.markdown("### Balance Sheet (₹ Crore Approx.)")
-    st.dataframe(bs.T)  # Transpose to show columns as years
+    bs = yf.Ticker(ticker).balance_sheet.fillna(0).T
+    bs.index = bs.index.strftime("%Y")
+    bs = bs.applymap(format_number)
+    st.markdown("### Balance Sheet (₹ Cr Approx.)")
+    st.dataframe(bs.T)
 
 # 🔄 Sector Rotation
 elif menu == "Sector Rotation":
     st.subheader("🔄 Sector Rotation Analysis")
     st.write("Coming soon: Sector heatmaps, momentum rotation, etc.")
-
-# 📚 Study Material
-elif menu == "Study Material":
-    st.subheader("📚 Study Material & Videos")
-    st.write("Telegram Group: [@Farooq898233](https://t.me/Farooq898233)")
 
 # 🤖 AI Chatbot
 elif menu == "AI Chatbot":
