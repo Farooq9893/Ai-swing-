@@ -26,7 +26,7 @@ def format_number(val):
         return str(val)
 
 st.sidebar.title("📊 Dashboard Menu")
-menu = st.sidebar.radio("Select Option", ["Dashboard", "Fundamental", "Balance Sheet", "Sector Rotation", "AI Chatbot"])
+menu = st.sidebar.radio("Select Option", ["Dashboard", "Fundamental", "Balance Sheet", "Sector Rotation", "VCP Screener", "AI Chatbot"])
 
 st.title("📈 Stock Analysis Dashboard")
 
@@ -100,11 +100,15 @@ elif menu == "Sector Rotation":
                     text_auto=True, color_continuous_scale='RdYlGn')
     st.plotly_chart(fig)
 
+# 🧠 VCP Screener
+elif menu == "VCP Screener":
+    st.subheader("📌 Volatility Contraction Pattern (VCP) Screener")
+    st.write("Coming soon: VCP breakout filtering with volume and consolidation patterns")
+
 # 🤖 AI Chatbot
 elif menu == "AI Chatbot":
     st.subheader("🤖 Ask the AI Chatbot")
     openai.api_key = st.secrets["openai_api_key"] if "openai_api_key" in st.secrets else os.getenv("OPENAI_API_KEY")
-
     user_input = st.text_input("Ask your stock question:")
     if user_input:
         with st.spinner("Generating response..."):
